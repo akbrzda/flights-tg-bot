@@ -3,7 +3,7 @@ $url = 'https://www.airport-surgut.ru/surgut/table/in/';
 $html = file_get_contents($url);
 $data = json_decode(file_get_contents('php://input'), TRUE);
 $data = $data['callback_query'] ? $data['callback_query'] : $data['message'];
-define('TOKEN', '6563537355:AAGzfWevcW3iMReeB9FuZEuy5BMrwvGJK1A');
+define('TOKEN', 'MY-TOKEN');
 $message = mb_strtolower(($data['text'] ? $data['text'] : $data['data']), 'utf-8');
 if ($html !== false) {
      $html = html_entity_decode($html);
