@@ -1,28 +1,78 @@
 <?php
-define('TOKEN', 'MY_TOKEN');
+
+include('config.php');
+define('TOKEN', 'MY-TOKEN');
 
 $data = json_decode(file_get_contents('php://input'), TRUE);
 $data = $data['callback_query'] ? $data['callback_query'] : $data['message'];
 $message = mb_strtolower(($data['text'] ? $data['text'] : $data['data']), 'utf-8');
+$user_id = $data['chat']['id'];
+
+try {
+     $conn = new PDO("mysql:host=$servername;dbname=$database;charset=utf8", $username, $password, [
+          PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+          PDO::ATTR_EMULATE_PREPARES => false,
+     ]);
+     echo "Connection successfulled";
+} catch (PDOException $e) {
+     echo "Connection failed: " . $e->getMessage();
+     exit;
+}
 
 $flightData = [];
 $delayFlightData = [];
 $flightCount = 0;
 $delayFlightCount = 0;
-
-function getSelectedDay()
+function getSelectedDay($user_id)
 {
-     return file_get_contents('selected_day.txt');
-}
-function saveSelectedDay($day)
-{
-     file_put_contents('selected_day.txt', $day);
+     global $conn;
+     try {
+          $query = "SELECT selday FROM selected_day WHERE user_id = :user_id";
+          $stmt = $conn->prepare($query);
+          $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+          $stmt->execute();
+
+          $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+          if ($result) {
+               return $result['selday'];
+          }
+
+          return false;
+     } catch (PDOException $e) {
+          echo "Error: " . $e->getMessage();
+          return false;
+     }
 }
 
-$selectedDay = getSelectedDay();
+function saveSelectedDay($user_id, $selday)
+{
+     global $conn;
+     try {
+          $existingDay = getSelectedDay($user_id);
+
+          if ($existingDay !== false) {
+               $query = "UPDATE selected_day SET selday = :selday WHERE user_id = :user_id";
+          } else {
+               $query = "INSERT INTO selected_day (user_id, selday) VALUES (:user_id, :selday)";
+          }
+
+          $stmt = $conn->prepare($query);
+          $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+          $stmt->bindParam(':selday', $selday, PDO::PARAM_STR);
+
+          if (!$stmt->execute()) {
+               throw new PDOException("Не удалось выполнить операцию.");
+          }
+     } catch (PDOException $e) {
+          echo "Ошибка: " . $e->getMessage();
+     }
+}
+$selectedDay = getSelectedDay($user_id);
+
 
 if ($message == 'сегодня' || $message == 'завтра' || $message == 'вчера') {
-     saveSelectedDay($message);
+     saveSelectedDay($user_id, $message);
 }
 
 if ($selectedDay == 'сегодня') {
@@ -125,7 +175,7 @@ switch ($message) {
           break;
      case 'пасхалка':
           $method = 'sendPhoto';
-          $stickerFileId = 'https://cataas.com/c?cache=' . $cacheBuster;
+          $stickerFileId = 'https://cataas.com/cat?cache=' . $cacheBuster;
           $send_data = [
                'photo' => $stickerFileId,
           ];
