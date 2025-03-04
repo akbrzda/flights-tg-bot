@@ -1,7 +1,7 @@
 <?php
 
 include('config.php');
-define('TOKEN', 'MY-TOKEN');
+define('TOKEN', '6563537355:AAGzfWevcW3iMReeB9FuZEuy5BMrwvGJK1A');
 
 $data = json_decode(file_get_contents('php://input'), TRUE);
 $data = $data['callback_query'] ? $data['callback_query'] : $data['message'];
@@ -76,13 +76,13 @@ if ($message == 'сегодня' || $message == 'завтра' || $message == '�
 }
 
 if ($selectedDay == 'сегодня') {
-     $url = 'https://www.airport-surgut.ru/surgut/table/in/';
+     $url = 'https://www.airport-surgut.ru/surgut/table/';
 } elseif ($selectedDay == 'завтра') {
-     $url = 'https://www.airport-surgut.ru/surgut/table/in/?day=tomorrow';
+     $url = 'https://www.airport-surgut.ru/surgut/table/?day=tomorrow';
 } elseif ($selectedDay == 'вчера') {
-     $url = 'https://www.airport-surgut.ru/surgut/table/in/?day=yesterday';
+     $url = 'https://www.airport-surgut.ru/surgut/table/?day=yesterday';
 } else {
-     $url = 'https://www.airport-surgut.ru/surgut/table/in/';
+     $url = 'https://www.airport-surgut.ru/surgut/table/';
 }
 $html = file_get_contents($url);
 if ($html !== false) {
@@ -102,6 +102,10 @@ if ($html !== false) {
           if ($flightCompanyParent) {
                $airline = $xpath->query('.//div[@class="flight__value"][1]', $flightCompanyParent)->item(0)->textContent;
           }
+		  $flightDeskParent = $xpath->query('.//div[@class="flight__desk"]', $block)->item(0);
+          if ($flightDeskParent) {
+               $desk = $xpath->query('.//div[@class="flight__value"][1]', $flightDeskParent)->item(0)->textContent;
+          }
           $flightStatusParent = $xpath->query('.//div[@class="flight__status"]', $block)->item(0);
           if ($flightStatusParent) {
                $status = $xpath->query('.//div[@class="flight__value"][1]', $flightStatusParent)->item(0)->textContent;
@@ -115,6 +119,7 @@ if ($html !== false) {
           *Город: $city
           *Рейс: $flightNumber
           *Авиакомпания: $airline
+		  *Стойка: $desk
           *Статус: $status";
           $factTime = trim($factTime);
           if (!empty($factTime)) {
@@ -136,6 +141,7 @@ if ($html !== false) {
                *Город: $city
                *Рейс: $flightNumber
                *Авиакомпания: $airline
+			   *Стойка: $desk
                *Статус: $status";
                if (!empty($factTime)) {
                     $flightInfo .= "*Фактическое время: $factTime";
